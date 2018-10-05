@@ -1,4 +1,4 @@
-package org.quartz.example;
+package org.quartz.examples;
 
 import static org.junit.Assert.assertTrue;
 

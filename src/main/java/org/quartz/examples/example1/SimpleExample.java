@@ -34,6 +34,10 @@ import java.util.Date;
 /**
  * This Example will demonstrate how to start and shutdown the Quartz scheduler and how to schedule a job to run in
  * Quartz.
+ *
+ * scheduler实例化后，可以启动(start)、暂停(stand-by)、停止(shutdown)。
+ * 注意：scheduler被停止后，除非重新实例化，否则不能重新启动；
+ * 只有当scheduler启动后，即使处于暂停状态也不行，trigger才会被触发（job才会被执行）。
  * 
  * @author Bill Kratzer
  */
