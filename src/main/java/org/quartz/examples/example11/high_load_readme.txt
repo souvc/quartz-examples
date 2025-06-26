@@ -1,30 +1,43 @@
-Example 11
-==========
+示例 11 - 高负载任务调度演示
+===============================
 
-Overview:
+概述:
+=====
+本示例演示了 Quartz 如何处理大量任务的调度。默认情况下，此示例会创建 500 个任务。
+不过，您可以通过修改启动脚本来改变任务数量。
+
+由于线程池的大小限制（本示例使用 12 个线程），调度器中只有 12 个线程会并发运行。
+这意味着在任何给定时间，最多只能同时执行 12 个任务。
+
+您可以在 quartz.properties 文件中修改此参数。
+
+
+配置说明:
 =========
-This example demonstrates how Quartz can handle a large
-number of jobs.   This example starts with 500 jobs.  However, 
-this number can be changed by modifying the start scripts.  
+1. 日志配置（可选）
+   您可以指定一个 log4j.properties 文件来控制日志输出
 
-Due to the size of the thread pool (this example uses as thread
-count of 12), only 12 threads will run concurrently in the 
-scheduler.   
+2. Quartz 配置
+   本示例使用 quartz.properties 文件来配置 Quartz。
+   修改 "threadCount" 属性可以控制 Quartz 线程池中的线程数量
+   （这限制了可以同时执行的任务数量）
 
-You can change this parameter in the quartz.properties file.
+3. 任务数量配置
+   您也可以修改此示例中运行的任务数量。
+   只需编辑启动脚本并传入一个有效的数字到程序中即可。
 
 
-Configuration:
-==============
-1.  You can decide to specify a log4j.properties file to
-control logging output (optional)
+运行说明:
+=========
+- 程序会创建指定数量的任务（默认 500 个）
+- 每个任务都会有一个随机的延迟时间来模拟实际工作
+- 任务会按照时间间隔依次启动，避免同时启动造成系统压力
+- 程序运行 5 分钟后会自动关闭调度器并显示执行统计信息
 
-2.  This example uses the quartz.properties file to 
-configure quartz.   Modify the "threadCount" property to 
-control how many threads are in the Quartz thread pool 
-(this limits the number of jobs that can execute at the 
-same time)
 
-3.  You can also modify the number of jobs that are run
-in this example.  Simply edit the script and pass in a valid
-number into the program.
+性能特点:
+=========
+- 演示了 Quartz 处理大量任务的能力
+- 展示了线程池对并发执行的控制
+- 提供了任务执行的详细日志和统计信息
+- 支持任务恢复功能（如果调度器意外关闭）
