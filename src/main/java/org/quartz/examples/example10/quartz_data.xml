@@ -1,50 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Quartz 任务调度数据配置文件
+    
+    此文件定义了插件示例中使用的任务和触发器配置。
+    XML 任务初始化插件会读取此文件并自动创建相应的任务和触发器。
+    
+    文件结构说明：
+    1. pre-processing-commands: 预处理命令，在加载新配置前执行
+    2. processing-directives: 处理指令，控制如何处理重复的任务和触发器
+    3. schedule: 调度配置，包含具体的任务和触发器定义
+-->
 <job-scheduling-data xmlns="http://www.quartz-scheduler.org/xml/JobSchedulingData"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.quartz-scheduler.org/xml/JobSchedulingData http://www.quartz-scheduler.org/xml/job_scheduling_data_1_8.xsd"
     version="1.8">
     
+    <!-- 预处理命令：在加载新的任务和触发器之前执行的清理操作 -->
     <pre-processing-commands>
-        <delete-jobs-in-group>*</delete-jobs-in-group>  <!-- clear all jobs in scheduler -->
-        <delete-triggers-in-group>*</delete-triggers-in-group> <!-- clear all triggers in scheduler -->
+        <!-- 删除调度器中的所有任务 -->
+        <delete-jobs-in-group>*</delete-jobs-in-group>
+        <!-- 删除调度器中的所有触发器 -->
+        <delete-triggers-in-group>*</delete-triggers-in-group>
     </pre-processing-commands>
     
+    <!-- 处理指令：控制如何处理与现有任务/触发器的冲突 -->
     <processing-directives>
-        <!-- if there are any jobs/trigger in scheduler of same name (as in this file), overwrite them -->
+        <!-- 如果调度器中存在同名的任务/触发器，则覆盖它们 -->
         <overwrite-existing-data>true</overwrite-existing-data>
-        <!-- if there are any jobs/trigger in scheduler of same name (as in this file), and over-write is false, ignore them rather then generating an error -->
+        <!-- 如果存在重复且不覆盖，是否忽略重复项而不是产生错误 -->
         <ignore-duplicates>false</ignore-duplicates> 
     </processing-directives>
     
+    <!-- 调度配置：定义具体的任务和触发器 -->
     <schedule>
+        <!-- 任务1：最简单的任务定义 -->
 	    <job>
 	        <name>TestJob1</name>
 	        <job-class>org.quartz.examples.example10.SimpleJob</job-class>
 	    </job>
 	    
+        <!-- 任务2：持久化任务，即使没有触发器也会保留在调度器中 -->
         <job>
             <name>TestDurableJob</name>
             <job-class>org.quartz.examples.example10.SimpleJob</job-class>
+            <!-- 持久化：true表示即使没有触发器关联也保留此任务 -->
             <durability>true</durability>
+            <!-- 恢复：false表示调度器重启后不自动恢复此任务 -->
             <recover>false</recover>
         </job>
 	    
+	    <!-- 触发器1：简单触发器，每5秒执行一次TestJob1 -->
 	    <trigger>
 	        <simple>
 	            <name>TestSimpleTrigger1AtFiveSecondInterval</name>
 	            <job-name>TestJob1</job-name>
-	            <repeat-count>-1</repeat-count> <!-- repeat indefinitely  -->
-	            <repeat-interval>5000</repeat-interval>  <!--  every 5 seconds -->
+	            <!-- 重复次数：-1表示无限重复 -->
+	            <repeat-count>-1</repeat-count>
+	            <!-- 重复间隔：5000毫秒（5秒） -->
+	            <repeat-interval>5000</repeat-interval>
 	        </simple>
 	    </trigger>
 	
+	    <!-- 任务3：完整配置的任务，包含分组、描述、数据映射等 -->
 	    <job>
 	        <name>TestJob2</name>
+	        <!-- 任务分组：用于组织和管理相关任务 -->
 	        <group>GroupOfTestJob2</group>
-	        <description>This is the description of TestJob2</description>
+	        <!-- 任务描述：说明任务的用途 -->
+	        <description>这是TestJob2的描述信息</description>
 	        <job-class>org.quartz.examples.example10.SimpleJob</job-class>
+	        <!-- 持久化：false表示没有触发器时会被删除 -->
 	        <durability>false</durability>
+	        <!-- 恢复：true表示调度器重启后会自动恢复此任务 -->
 	        <recover>true</recover>
+	        <!-- 任务数据映射：向任务传递参数数据 -->
 	        <job-data-map>
 	            <entry>
 	                <key>someKey</key>
@@ -57,25 +87,33 @@
 	        </job-data-map>
 	    </job>
 	    
+	    <!-- 触发器2：带有详细配置的简单触发器 -->
 	    <trigger>
 	        <simple>
 	            <name>TestSimpleTrigger2AtTenSecondIntervalAndFiveRepeats</name>
+	            <!-- 触发器分组：用于组织管理相关触发器 -->
 	            <group>GroupOfTestJob2Triggers</group>
 	            <job-name>TestJob2</job-name>
 	            <job-group>GroupOfTestJob2</job-group>
+	            <!-- 开始时间：指定触发器的启动时间 -->
 	            <start-time>2010-02-09T10:15:00</start-time>
+	            <!-- 错过触发处理策略：立即重新调度并保持现有重复次数 -->
 	            <misfire-instruction>MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_EXISTING_REPEAT_COUNT</misfire-instruction>
+	            <!-- 重复次数：执行5次后停止 -->
 	            <repeat-count>5</repeat-count>
+	            <!-- 重复间隔：10000毫秒（10秒） -->
 	            <repeat-interval>10000</repeat-interval>
 	        </simple>
 	    </trigger>
 	    
+	    <!-- 触发器3：Cron触发器，每分钟执行一次 -->
 	    <trigger>
 	        <cron>
 	            <name>TestCronTrigger2AtEveryMinute</name>
 	            <group>GroupOfTestJob2Triggers</group>
 	            <job-name>TestJob2</job-name>
 	            <job-group>GroupOfTestJob2</job-group>
+                <!-- 触发器级别的数据映射：会覆盖任务级别的同名数据 -->
                 <job-data-map>
                     <entry>
                         <key>someKey</key>
@@ -86,20 +124,27 @@
                         <value>someOtherOverriddenValue</value>
                     </entry>
                 </job-data-map>
+                <!-- Cron表达式：0 * * ? * * 表示每分钟的第0秒执行 -->
                 <cron-expression>0 * * ? * *</cron-expression>
 	        </cron>
 	    </trigger>
 	
+	    <!-- 触发器4：完整配置的Cron触发器，包含时间范围和时区设置 -->
 	    <trigger>
 	        <cron>
 	            <name>TestCronTrigger2AtEveryMinuteOnThe45thSecond</name>
 	            <group>GroupOfTestJob2Triggers</group>
 	            <job-name>TestJob2</job-name>
 	            <job-group>GroupOfTestJob2</job-group>
+	            <!-- 开始时间：触发器生效的起始时间 -->
 	            <start-time>2010-02-09T12:26:00.0</start-time>
+	            <!-- 结束时间：触发器失效的截止时间 -->
 	            <end-time>2012-02-09T12:26:00.0</end-time>
+	            <!-- 错过触发处理策略：使用智能策略自动处理 -->
 	            <misfire-instruction>MISFIRE_INSTRUCTION_SMART_POLICY</misfire-instruction>
+	            <!-- Cron表达式：45 * * ? * * 表示每分钟的第45秒执行 -->
 	            <cron-expression>45 * * ? * *</cron-expression>
+	            <!-- 时区设置：使用洛杉矶时区 -->
 	            <time-zone>America/Los_Angeles</time-zone>
 	        </cron>
 	    </trigger>
