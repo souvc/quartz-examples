@@ -27,22 +27,22 @@ import org.quartz.JobExecutionException;
 
 /**
  * <p>
- * This is just a simple job that says "Hello" to the world.
+ * 这是一个简单的任务，向世界说"Hello"。
  * </p>
  * 
  * @author Bill Kratzer
  */
 public class HelloJob implements Job {
 
+    // 静态日志记录器，用于记录任务执行信息
     private static Logger _log = LoggerFactory.getLogger(HelloJob.class);
 
     /**
      * <p>
-     * Empty constructor for job initilization
+     * 用于任务初始化的空构造函数
      * </p>
      * <p>
-     * Quartz requires a public empty constructor so that the
-     * scheduler can instantiate the class whenever it needs.
+     * Quartz要求有一个公共的空构造函数，这样调度器就可以在需要时实例化该类。
      * </p>
      */
     public HelloJob() {
@@ -50,18 +50,17 @@ public class HelloJob implements Job {
 
     /**
      * <p>
-     * Called by the <code>{@link org.quartz.Scheduler}</code> when a
-     * <code>{@link org.quartz.Trigger}</code> fires that is associated with
-     * the <code>Job</code>.
+     * 当与该<code>Job</code>关联的<code>{@link org.quartz.Trigger}</code>触发时，
+     * 由<code>{@link org.quartz.Scheduler}</code>调用此方法。
      * </p>
      * 
      * @throws JobExecutionException
-     *             if there is an exception while executing the job.
+     *             如果在执行任务时发生异常。
      */
     public void execute(JobExecutionContext context)
         throws JobExecutionException {
 
-        // Say Hello to the World and display the date/time
+        // 向世界说Hello并显示当前日期/时间
         _log.info("Hello World! - " + new Date());
     }
 

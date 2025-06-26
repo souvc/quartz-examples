@@ -1,9 +1,84 @@
-Example 1
-=========
+Example 1 - Quartz基础示例
+==========================
 
-Overview:
+概述:
+=====
+本示例演示如何快速启动和运行Quartz调度器，以及如何调度一个简单的任务。
+
+文件说明:
 =========
-This example will demonstrate how to quickly get quartz up 
-and running and how to schedule a simple job.
+1. SimpleExample.java - 主程序类，演示Quartz调度器的基本使用
+2. HelloJob.java - 简单的任务类，实现Job接口
+
+功能特性:
+=========
+- 创建和配置Quartz调度器
+- 定义简单的任务(Job)
+- 创建触发器(Trigger)来调度任务
+- 启动调度器并执行任务
+- 优雅地关闭调度器
+
+核心概念:
+=========
+1. Scheduler(调度器): Quartz的核心组件，负责管理和执行任务
+2. Job(任务): 需要执行的具体业务逻辑，必须实现Job接口
+3. JobDetail(任务详情): 包含任务的详细信息，如任务类、标识等
+4. Trigger(触发器): 定义任务的执行时间和频率
+5. SchedulerFactory(调度器工厂): 用于创建调度器实例
+
+运行步骤:
+=========
+1. 初始化调度器工厂和调度器实例
+2. 计算任务执行时间(下一个整分钟)
+3. 创建JobDetail，绑定到HelloJob类
+4. 创建Trigger，设置任务执行时间
+5. 将任务和触发器注册到调度器
+6. 启动调度器
+7. 等待任务执行
+8. 关闭调度器
+
+代码执行流程:
+=============
+1. 程序启动后会显示"初始化中"日志
+2. 创建调度器并显示"初始化完成"
+3. 计算下一个整分钟时间作为任务执行时间
+4. 创建HelloJob任务和对应的触发器
+5. 显示任务将要执行的时间
+6. 启动调度器，显示"调度器已启动"
+7. 等待65秒，期间HelloJob会在指定时间执行
+8. HelloJob执行时会输出"Hello World! - 当前时间"
+9. 程序结束前关闭调度器
+
+关键代码说明:
+=============
+- StdSchedulerFactory: 标准调度器工厂，用于创建调度器
+- evenMinuteDate(): 计算下一个整分钟时间的工具方法
+- newJob(): 创建JobDetail的构建器方法
+- newTrigger(): 创建Trigger的构建器方法
+- withIdentity(): 为任务和触发器设置唯一标识
+- startAt(): 设置触发器的开始时间
+- scheduleJob(): 将任务和触发器注册到调度器
+- start(): 启动调度器
+- shutdown(true): 关闭调度器，参数true表示等待正在执行的任务完成
+
+注意事项:
+=========
+1. 调度器必须先启动才能执行任务
+2. Job类必须有公共的无参构造函数
+3. Job类必须实现org.quartz.Job接口
+4. 调度器关闭后不能重新启动，需要重新创建
+5. 本示例使用简单触发器，只执行一次任务
+
+扩展建议:
+=========
+1. 可以尝试使用CronTrigger实现更复杂的调度规则
+2. 可以添加多个不同的Job和Trigger
+3. 可以配置JobDataMap传递参数给Job
+4. 可以实现JobListener监听任务执行状态
+5. 可以配置持久化存储来保存调度信息
+
+运行方法:
+=========
+直接运行SimpleExample类的main方法即可看到完整的演示效果。
 
 
