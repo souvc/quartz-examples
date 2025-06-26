@@ -1,56 +1,64 @@
-Example 12
-==========
+示例12 - RMI 远程任务调度演示
+===============================
 
-Overview:
+概述：
+=====
+
+本示例演示了如何在客户端/服务器环境中使用 Quartz，通过 RMI（远程方法调用）
+在远程服务器上调度任务。
+
+本示例将运行一个服务器来执行调度。服务器本身不会调度任何任务。
+本示例还将执行一个客户端，该客户端将通过 RMI 连接到服务器来调度任务。
+一旦任务被远程调度，服务器上的调度器将在正确的时间运行该任务。
+
+注意：当您在不同的计算机上运行客户端和服务器时，此示例效果最佳。
+但是，您当然也可以在同一台机器上运行服务器和客户端！
+
+运行示例：
 =========
 
-This example demonstrates how Quartz can be used in a client/server
-environment to remotely scheudle jobs on a remote server using
-RMI (Remote Method Invocation).  
+1. 根据需要配置 client.properties 文件和 server.properties 文件
+   （详细信息请参见下面的"配置"部分）。
 
-This example will run a server that will execute the scheudle.  The
-server itself will not schedule any jobs.   This example will also
-execute a client that will connect to the server (via RMI) to 
-schedule the job.  Once the job is remotely scheduled, the sceduler on
-the server will run the job (at the correct time).
+2. Windows 用户 - 根据需要修改 server.bat 和 client.bat 来设置您的 JAVA_HOME。
+   运行 server.bat。服务器启动后，运行 client.bat
+   （注意：这些可能在同一台机器上，也可能不在！）
+   
+3. UNIX/Linux 用户 - 根据需要修改 server.sh 和 client.sh 来设置您的 JAVA_HOME。
+   执行 server.sh。服务器启动后，运行 client.sh
+   （注意：这些可能在同一台机器上，也可能不在！）
 
-Note:  This example works best when you run the client and server on 
-different computers.  However, you can certainly run the server and 
-the client on the same box!
+注意：如果您同时可以访问 Windows 和 UNIX/Linux 机器，
+请尝试在不同平台上运行示例！
 
-Running the Example:
-====================
+配置：
+=====
 
-1. Configure the client.properties file and the server.properties
-as necesarry (see the "Configuration" section below for details).
+1. 您可以选择指定一个 log4j.properties 文件来控制日志输出（可选）
 
-2. Windows users - Modify server.bat and client.bat (if necessary) 
-to set your JAVA_HOME.  Run server.bat.  Once the server is started, run 
-client.bat (note: these may or may not be on the same box!)
-3. UNIX/Linux users - Modify server.sh and client.sh (if necessary)
-to set your JAVA_HOME.  Execute server.sh.  Once the server is started, 
-run client.sh (note: these may or may not be on the same box!)
+2. 有一个 server.properties 文件用于配置服务器以及服务器监听 RMI 请求的
+   主机和端口。通常，此主机是 localhost，端口是 1099：
+   
+   org.quartz.scheduler.rmi.registryHost = localhost
+   org.quartz.scheduler.rmi.registryPort = 1099
 
-Note:  If you have access to both Windows boxes and UNIX/Linux boxes, try
-running the example on different platforms!
+3. 有一个 client.properties 文件用于配置客户端，告诉它要连接到哪个服务器
+   和端口。如果客户端与服务器在同一台机器上运行，那么 localhost 就可以了。
+   如果服务器与客户端在不同的机器上运行，那么您需要为 registryHost 指定
+   主机名或 IP 地址。这将告诉客户端要连接到哪个服务器/主机进行远程方法调用。
 
-Configuration:
-==============
+架构说明：
+=========
 
-1.  You can decide to specify a log4j.properties file to
-control logging output (optional)
-2.  There is a server.properties file that is used to
-configure the server and the host and port that the server
-is listening to for RMI request.  Typically, this host is
-localhost and the port is 1099:
-	
-	org.quartz.scheduler.rmi.registryHost = localhost
-	org.quartz.scheduler.rmi.registryPort = 1099
+本示例展示了 Quartz 的分布式架构能力：
+- 服务器端：运行 Quartz 调度器，负责实际执行任务
+- 客户端：连接到远程调度器，负责提交和管理任务
+- RMI 通信：提供透明的远程方法调用机制
 
-3.  There is a client.properties file that is used to configure
-the client to tell it which server and port to connect to.  If the
-client is running on the same box as the server, then localhost will
-be fine.  If server is running on a different box than the client, then
-you will want to specify the host or IP address for registryHost.  This
-will tell the client which server/host to connect to for its remote
-method invokations.
+应用场景：
+=========
+
+1. 分布式任务调度：多个客户端向中央调度服务器提交任务
+2. 负载均衡：将任务执行分散到多个服务器节点
+3. 集中管理：统一的任务调度和监控中心
+4. 高可用性：服务器和客户端可以独立部署和扩展
