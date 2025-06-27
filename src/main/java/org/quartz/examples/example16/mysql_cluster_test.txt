@@ -1,0 +1,258 @@
+# Quartz MySQL 集群测试指南
+
+## 概述
+本文档提供了 Quartz MySQL 集群示例的完整测试指南，包括环境准备、启动命令、功能验证等步骤。
+
+## 环境准备
+
+### 1. MySQL 数据库准备
+```sql
+-- 创建数据库
+CREATE DATABASE quartz_cluster CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 创建用户（可选）
+CREATE USER 'quartz'@'localhost' IDENTIFIED BY 'quartz123';
+GRANT ALL PRIVILEGES ON quartz_cluster.* TO 'quartz'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 2. 创建 Quartz 表结构
+```bash
+# 使用项目提供的建表脚本
+mysql -u root -p quartz_cluster < mysql_schema.sql
+
+# 或者使用 Quartz 官方脚本
+mysql -u root -p quartz_cluster < src/main/resources/dbTables/tables_mysql_innodb.sql
+```
+
+### 3. 验证表结构
+```sql
+USE quartz_cluster;
+SHOW TABLES;
+-- 应该看到以下表：
+-- QRTZ_BLOB_TRIGGERS
+-- QRTZ_CALENDARS
+-- QRTZ_CRON_TRIGGERS
+-- QRTZ_FIRED_TRIGGERS
+-- QRTZ_JOB_DETAILS
+-- QRTZ_LOCKS
+-- QRTZ_PAUSED_TRIGGER_GRPS
+-- QRTZ_SCHEDULER_STATE
+-- QRTZ_SIMPLE_TRIGGERS
+-- QRTZ_SIMPROP_TRIGGERS
+-- QRTZ_TRIGGERS
+```
+
+### 4. 项目构建
+```bash
+# 确保 MySQL 驱动依赖已添加到 pom.xml
+mvn clean compile
+```
+
+## 启动命令
+
+### 方式一：IDE 运行
+
+#### 实例1（主实例 - 清理并调度任务）
+**VM Options:**
+```
+-Dorg.quartz.properties=mysql_instance1.properties
+```
+
+**Program Arguments:**
+```
+clearJobs scheduleJobs
+```
+
+#### 实例2（从实例 - 仅参与集群）
+**VM Options:**
+```
+-Dorg.quartz.properties=mysql_instance2.properties
+```
+
+**Program Arguments:**
+```
+dontScheduleJobs
+```
+
+### 方式二：命令行运行
+
+#### Windows PowerShell
+```powershell
+# 切换到项目根目录
+cd d:\work\code\quartz-examples
+
+# 实例1（清理并调度任务）
+java -cp "target\classes;target\dependency\*" "-Dorg.quartz.properties=mysql_instance1.properties" org.quartz.examples.example16.MySQLClusterExample clearJobs scheduleJobs
+
+# 实例2（仅参与集群）- 在新的 PowerShell 窗口中运行
+java -cp "target\classes;target\dependency\*" "-Dorg.quartz.properties=mysql_instance2.properties" org.quartz.examples.example16.MySQLClusterExample dontScheduleJobs
+```
+
+#### Linux/Unix
+```bash
+# 切换到项目根目录
+cd /path/to/quartz-examples
+
+# 实例1（清理并调度任务）
+java -cp "target/classes:target/dependency/*" -Dorg.quartz.properties=mysql_instance1.properties org.quartz.examples.example16.MySQLClusterExample clearJobs scheduleJobs
+
+# 实例2（仅参与集群）- 在新的终端窗口中运行
+java -cp "target/classes:target/dependency/*" -Dorg.quartz.properties=mysql_instance2.properties org.quartz.examples.example16.MySQLClusterExample dontScheduleJobs
+```
+
+## 功能验证
+
+### 1. 启动验证
+
+#### 检查实例1启动日志
+```
+[INFO] MySQLClusterScheduler started.
+[INFO] 任务1已调度 - 任务标识: group_1.MySQLTestJob1
+[INFO] 任务2已调度 - 任务标识: group_1.MySQLStatefulJob2
+[INFO] 任务3已调度 - 任务标识: group_1.MySQLLongRunningJob3
+```
+
+#### 检查实例2启动日志
+```
+[INFO] MySQLClusterScheduler started.
+[INFO] 集群实例已启动，等待任务分配...
+```
+
+### 2. 数据库验证
+```sql
+-- 检查调度器状态
+SELECT * FROM QRTZ_SCHEDULER_STATE;
+-- 应该看到两个实例的记录
+
+-- 检查任务详情
+SELECT SCHED_NAME, JOB_NAME, JOB_GROUP, JOB_CLASS_NAME FROM QRTZ_JOB_DETAILS;
+
+-- 检查触发器状态
+SELECT SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP, TRIGGER_STATE, NEXT_FIRE_TIME FROM QRTZ_TRIGGERS;
+
+-- 检查正在执行的任务
+SELECT * FROM QRTZ_FIRED_TRIGGERS;
+```
+
+### 3. 集群功能验证
+
+#### 任务分布验证
+- 观察两个实例的日志输出
+- 确认任务在不同实例间执行
+- 检查任务执行的实例ID
+
+#### 故障转移验证
+```bash
+# 1. 停止实例1（Ctrl+C）
+# 2. 观察实例2是否接管任务执行
+# 3. 重新启动实例1
+# 4. 观察任务重新分布
+```
+
+#### 状态持久化验证
+```sql
+-- 查看有状态任务的数据
+SELECT JOB_NAME, JOB_DATA FROM QRTZ_JOB_DETAILS WHERE JOB_NAME = 'MySQLStatefulJob2';
+
+-- 观察执行计数器的变化
+```
+
+### 4. 负载均衡验证
+- 同时运行多个实例
+- 观察任务在实例间的分布
+- 检查每个实例的任务执行频率
+
+## 监控命令
+
+### 实时监控任务执行
+```sql
+-- 监控调度器状态（每5秒刷新）
+SELECT 
+    INSTANCE_NAME,
+    FROM_UNIXTIME(LAST_CHECKIN_TIME/1000) as LAST_CHECKIN,
+    CHECKIN_INTERVAL/1000 as INTERVAL_SEC
+FROM QRTZ_SCHEDULER_STATE;
+
+-- 监控触发器下次执行时间
+SELECT 
+    TRIGGER_NAME,
+    TRIGGER_STATE,
+    FROM_UNIXTIME(NEXT_FIRE_TIME/1000) as NEXT_FIRE,
+    FROM_UNIXTIME(PREV_FIRE_TIME/1000) as PREV_FIRE
+FROM QRTZ_TRIGGERS
+ORDER BY NEXT_FIRE_TIME;
+```
+
+### 性能监控
+```sql
+-- 查看任务执行统计
+SELECT 
+    JOB_NAME,
+    COUNT(*) as EXECUTION_COUNT
+FROM QRTZ_FIRED_TRIGGERS 
+WHERE FIRED_TIME > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 HOUR)) * 1000
+GROUP BY JOB_NAME;
+```
+
+## 故障排除
+
+### 常见问题
+
+1. **ClassNotFoundException: com.mysql.cj.jdbc.Driver**
+   - 确保 pom.xml 中已添加 MySQL 驱动依赖
+   - 运行 `mvn dependency:copy-dependencies`
+
+2. **找不到或无法加载主类**
+   - 检查系统属性参数格式：`"-Dorg.quartz.properties=配置文件"`
+   - 确保配置文件路径正确
+
+3. **数据库连接失败**
+   - 检查 MySQL 服务是否启动
+   - 验证数据库连接配置
+   - 确认用户权限
+
+4. **ClassCastException: Identified object is not an Integer**
+   - 此问题已在 MySQLStatefulJob.java 中修复
+   - 确保使用最新版本的代码
+
+### 日志级别调整
+```properties
+# 在配置文件中添加以下内容以获取更详细的日志
+org.quartz.plugin.shutdownhook.class = org.quartz.plugins.management.ShutdownHookPlugin
+org.quartz.plugin.shutdownhook.cleanShutdown = true
+
+# 启用调试日志
+org.quartz.scheduler.skipUpdateCheck = true
+```
+
+## 扩展测试
+
+### 添加更多实例
+1. 复制配置文件（如 mysql_instance3.properties）
+2. 修改实例ID
+3. 使用相同的启动命令
+
+### 自定义任务测试
+1. 创建新的 Job 类
+2. 在 MySQLClusterExample 中添加任务调度
+3. 测试任务在集群中的执行
+
+## 清理环境
+```sql
+-- 清理测试数据
+DELETE FROM QRTZ_FIRED_TRIGGERS;
+DELETE FROM QRTZ_SIMPLE_TRIGGERS;
+DELETE FROM QRTZ_CRON_TRIGGERS;
+DELETE FROM QRTZ_TRIGGERS;
+DELETE FROM QRTZ_JOB_DETAILS;
+DELETE FROM QRTZ_SCHEDULER_STATE;
+```
+
+---
+
+**注意事项：**
+- 确保所有实例使用相同的数据库
+- 实例ID会自动生成，无需手动指定
+- 建议在生产环境中使用连接池
+- 定期监控数据库性能和集群状态
